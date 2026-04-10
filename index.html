@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#E30613">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="50일">
+<meta name="description" content="50일 습관 트래커">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>50일 습관 트래커</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#111}
+:root{--red:#E30613;--red-light:#FCEBEB;--red-mid:#f09595;--bg:#fff;--bg2:#f5f5f5;--border:#e5e5e5;--text:#111;--text2:#666;--text3:#aaa}
+@media(prefers-color-scheme:dark){:root{--bg:#111;--bg2:#1a1a1a;--border:#2a2a2a;--text:#f0f0f0;--text2:#888;--text3:#555;--red-light:#2a0505}}
+
+/* Layout */
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh;background:var(--bg2)}
+.topbar{background:var(--bg);border-bottom:1px solid var(--border);padding:0;flex-shrink:0;padding-top:env(safe-area-inset-top)}
+.topbar-inner{display:flex;align-items:center;gap:10px;padding:12px 16px}
+.logo{width:40px;height:40px;background:var(--red);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;flex-shrink:0;letter-spacing:-0.5px}
+.slogan-wrap{flex:1;min-width:0}
+.slogan-input{width:100%;border:none;background:transparent;font-size:14px;color:var(--text);outline:none;border-bottom:1.5px solid var(--red);padding:2px 0;min-height:24px}
+.slogan-input::placeholder{color:var(--text3);font-size:13px}
+.slogan-sub{font-size:10px;color:var(--text3);margin-bottom:2px}
+
+/* Progress */
+.progress-bar{height:3px;background:var(--border);position:relative}
+.progress-fill{height:100%;background:var(--red);transition:width 0.4s ease}
+
+/* Content */
+.content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(80px + env(safe-area-inset-bottom))}
+
+/* Bottom Nav */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 0;cursor:pointer;gap:3px;color:var(--text3);font-size:10px;font-weight:500;transition:color 0.15s;border:none;background:none}
+.nav-item.active{color:var(--red)}
+.nav-icon{font-size:20px;line-height:1}
+
+/* Section pages */
+.page{display:none;padding:16px}
+.page.active{display:block}
+
+/* Day badge */
+.day-badge{display:inline-flex;align-items:center;gap:6px;background:var(--red-light);color:var(--red);padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:12px}
+
+/* Category */
+.cat-block{background:var(--bg);border-radius:14px;border:1px solid var(--border);margin-bottom:12px;overflow:hidden}
+.cat-head{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cat-name{font-size:13px;font-weight:600;flex:1;color:var(--text)}
+.add-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:11px;color:var(--text2);cursor:pointer;font-weight:500}
+.add-btn:active{background:var(--bg2)}
+.mission-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border)}
+.mission-item:last-child{border-bottom:none}
+.mission-name{flex:1;font-size:13px;color:var(--text);line-height:1.4}
+.action-btn{background:none;border:none;font-size:16px;padding:4px;cursor:pointer;color:var(--text3);border-radius:6px;flex-shrink:0}
+.action-btn:active{background:var(--bg2)}
+.empty-msg{padding:14px;font-size:12px;color:var(--text3);text-align:center}
+
+/* Calendar */
+.cal-nav-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-nav-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:16px;cursor:pointer;color:var(--text);line-height:1}
+.cal-nav-btn:active{background:var(--bg2)}
+.cal-title{font-size:16px;font-weight:600;color:var(--text)}
+.cal-card{background:var(--bg);border-radius:14px;border:1px solid var(--border);padding:14px;margin-bottom:12px}
+.cal-day-labels{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin-bottom:6px}
+.cal-day-label{font-size:11px;font-weight:600;color:var(--text3);padding:4px 0}
+.cal-day-label:first-child{color:#e53e3e}
+.cal-day-label:last-child{color:#4299e1}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;font-size:13px;cursor:pointer;position:relative;color:var(--text);border:1.5px solid transparent}
+.cal-cell:active{opacity:0.7}
+.cal-cell.out{color:var(--text3);cursor:default;opacity:0.4}
+.cal-cell.out:active{opacity:0.4}
+.cal-cell.not-in-range{color:var(--text3);cursor:default}
+.cal-cell.today{border-color:var(--red);font-weight:700;color:var(--red)}
+.cal-cell.in-range{background:var(--red-light)}
+.cal-cell.partial::after{content:'';width:4px;height:4px;background:var(--red);border-radius:50%;position:absolute;bottom:3px;left:50%;transform:translateX(-50%)}
+.cal-cell.all-done{background:var(--red);color:#fff;font-weight:700}
+.cal-cell.selected{box-shadow:0 0 0 2px var(--red)}
+
+/* Day panel */
+.day-panel{background:var(--bg);border-radius:14px;border:1px solid var(--border);overflow:hidden}
+.day-panel-head{padding:12px 14px;border-bottom:1px solid var(--border)}
+.day-panel-title{font-size:14px;font-weight:600;color:var(--text)}
+.day-panel-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.check-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.check-item:last-child{border-bottom:none}
+.check-box{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:all 0.15s;background:var(--bg)}
+.check-box.done{background:var(--red);border-color:var(--red)}
+.check-box.done::after{content:'✓';color:#fff;font-size:11px;font-weight:700}
+.check-name{flex:1;font-size:13px;color:var(--text)}
+.check-cat-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0}
+
+/* Settings */
+.settings-card{background:var(--bg);border-radius:14px;border:1px solid var(--border);overflow:hidden;margin-bottom:12px}
+.setting-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.setting-row:last-child{border-bottom:none}
+.setting-label{font-size:13px;color:var(--text2);min-width:60px;flex-shrink:0}
+.setting-value{font-size:13px;font-weight:500;color:var(--text);flex:1;text-align:right}
+.setting-input{flex:1;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--red);text-align:right;outline:none}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat-card{background:var(--bg);border-radius:14px;border:1px solid var(--border);padding:14px 16px}
+.stat-label{font-size:11px;color:var(--text3);margin-bottom:4px;font-weight:500}
+.stat-value{font-size:22px;font-weight:700;color:var(--text)}
+.stat-unit{font-size:12px;font-weight:400;color:var(--text3);margin-left:2px}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-sheet{background:var(--bg);border-radius:20px 20px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));width:100%;max-width:500px;animation:slideup 0.2s ease}
+@keyframes slideup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.modal-title{font-size:16px;font-weight:600;color:var(--text);margin-bottom:14px}
+.modal-input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;font-size:15px;color:var(--text);background:var(--bg2);outline:none;margin-bottom:14px}
+.modal-input:focus{border-color:var(--red)}
+.modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-btn{padding:13px;border-radius:12px;font-size:15px;font-weight:600;border:none;cursor:pointer}
+.modal-btn.ok{background:var(--red);color:#fff}
+.modal-btn.cancel{background:var(--bg2);color:var(--text2)}
+.modal-btn:active{opacity:0.85}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="logo">50</div>
+      <div class="slogan-wrap">
+        <div class="slogan-sub">오늘의 슬로건</div>
+        <input class="slogan-input" id="sloganInput" placeholder="50일의 목표를 한 문장으로…" maxlength="40">
+      </div>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <!-- 미션 페이지 -->
+    <div class="page active" id="page-missions">
+      <div class="day-badge" id="dayBadge">📅 0 / 50일</div>
+      <div id="missionList"></div>
+    </div>
+
+    <!-- 캘린더 페이지 -->
+    <div class="page" id="page-calendar">
+      <div class="cal-nav-row">
+        <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+        <span class="cal-title" id="calTitle"></span>
+        <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+      </div>
+      <div class="cal-card">
+        <div class="cal-day-labels" id="calDayLabels"></div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <div id="dayPanel"></div>
+    </div>
+
+    <!-- 설정 페이지 -->
+    <div class="page" id="page-settings">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">현재 진행</div>
+          <div class="stat-value" id="statDay">0<span class="stat-unit">일차</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">완료율</div>
+          <div class="stat-value" id="statPct">0<span class="stat-unit">%</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">총 미션 수</div>
+          <div class="stat-value" id="statTotal">0<span class="stat-unit">개</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">남은 일수</div>
+          <div class="stat-value" id="statLeft">50<span class="stat-unit">일</span></div>
+        </div>
+      </div>
+      <div class="settings-card">
+        <div class="setting-row">
+          <span class="setting-label">시작일</span>
+          <input type="date" class="setting-input" id="startDateInput" onchange="onStartDateChange()">
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">종료일</span>
+          <span class="setting-value" id="endDateLabel">—</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">슬로건</span>
+          <span class="setting-value" id="sloganPreview" style="font-size:12px;color:var(--text3)">미설정</span>
+        </div>
+      </div>
+      <div style="padding:16px;font-size:12px;color:var(--text3);text-align:center;line-height:1.6">
+        💡 iPhone: Safari에서 열기 → 공유 버튼 → 홈 화면에 추가<br>
+        Android: Chrome에서 열기 → 메뉴 → 홈 화면에 추가
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <button class="nav-item active" id="nav-missions" onclick="switchPage('missions')">
+      <span class="nav-icon">✦</span>
+      <span>미션</span>
+    </button>
+    <button class="nav-item" id="nav-calendar" onclick="switchPage('calendar')">
+      <span class="nav-icon">◫</span>
+      <span>캘린더</span>
+    </button>
+    <button class="nav-item" id="nav-settings" onclick="switchPage('settings')">
+      <span class="nav-icon">◎</span>
+      <span>설정</span>
+    </button>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle">미션 추가</div>
+    <input class="modal-input" id="modalInput" placeholder="미션 내용 입력" maxlength="40">
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeModal()">취소</button>
+      <button class="modal-btn ok" onclick="saveModal()">저장</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATS=[
+  {id:'health',name:'건강',color:'#E30613',bg:'#FCEBEB',textColor:'#E30613'},
+  {id:'study',name:'공부',color:'#185FA5',bg:'#E6F1FB',textColor:'#185FA5'},
+  {id:'system',name:'시스템',color:'#3B6D11',bg:'#EAF3DE',textColor:'#3B6D11'}
+];
+
+let S={slogan:'',startDate:'',missions:{health:[],study:[],system:[]},checks:{}};
+let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
+let selectedDay=null,modalMode=null;
+
+function save(){try{localStorage.setItem('h50v2',JSON.stringify(S))}catch(e){}}
+function load(){try{const d=localStorage.getItem('h50v2');if(d)S=JSON.parse(d)}catch(e){}}
+load();
+
+// Init
+document.getElementById('sloganInput').value=S.slogan||'';
+document.getElementById('sloganInput').addEventListener('input',e=>{S.slogan=e.target.value;save();updateSettings();});
+if(S.startDate)document.getElementById('startDateInput').value=S.startDate;
+
+function getDayNum(){
+  if(!S.startDate)return 0;
+  const s=new Date(S.startDate),t=new Date();
+  s.setHours(0,0,0,0);t.setHours(0,0,0,0);
+  return Math.min(Math.max(Math.floor((t-s)/86400000)+1,0),50);
+}
+
+function updateProgress(){
+  const d=getDayNum(),pct=Math.round(d/50*100);
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('dayBadge').textContent='📅 '+d+' / 50일';
+}
+updateProgress();
+
+function switchPage(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('nav-'+page).classList.add('active');
+  if(page==='calendar')renderCalendar();
+  if(page==='settings'){updateSettings();}
+}
+
+/* Mission rendering */
+function renderMissions(){
+  const el=document.getElementById('missionList');
+  el.innerHTML='';
+  CATS.forEach(cat=>{
+    const ms=S.missions[cat.id]||[];
+    const div=document.createElement('div');
+    div.className='cat-block';
+    const head=document.createElement('div');
+    head.className='cat-head';
+    head.innerHTML=`<div class="cat-dot" style="background:${cat.color}"></div>
+      <span class="cat-name">${cat.name}</span>
+      <button class="add-btn" onclick="openAdd('${cat.id}')">+ 추가</button>`;
+    div.appendChild(head);
+    if(ms.length===0){
+      const e=document.createElement('div');e.className='empty-msg';e.textContent='미션을 추가해 보세요';div.appendChild(e);
+    }
+    ms.forEach((m,i)=>{
+      const item=document.createElement('div');item.className='mission-item';
+      item.innerHTML=`<span class="mission-name">${esc(m)}</span>
+        <button class="action-btn" onclick="openEdit('${cat.id}',${i})">✎</button>
+        <button class="action-btn" onclick="delMission('${cat.id}',${i})">✕</button>`;
+      div.appendChild(item);
+    });
+    el.appendChild(div);
+  });
+}
+renderMissions();
+
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function openAdd(catId){
+  modalMode={type:'add',cat:catId};
+  const cat=CATS.find(c=>c.id===catId);
+  document.getElementById('modalTitle').textContent=cat.name+' 미션 추가';
+  document.getElementById('modalInput').value='';
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('modalInput').focus(),100);
+}
+
+function openEdit(catId,idx){
+  modalMode={type:'edit',cat:catId,idx};
+  const cat=CATS.find(c=>c.id===catId);
+  document.getElementById('modalTitle').textContent=cat.name+' 미션 수정';
+  document.getElementById('modalInput').value=S.missions[catId][idx];
+  document.getElementById('modalOverlay').classList.add('open');
+  setTimeout(()=>document.getElementById('modalInput').focus(),100);
+}
+
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');modalMode=null;}
+function handleOverlayClick(e){if(e.target===document.getElementById('modalOverlay'))closeModal();}
+
+function saveModal(){
+  const val=document.getElementById('modalInput').value.trim();
+  if(!val)return;
+  if(modalMode.type==='add')S.missions[modalMode.cat].push(val);
+  else S.missions[modalMode.cat][modalMode.idx]=val;
+  save();renderMissions();closeModal();
+}
+
+function delMission(catId,idx){
+  if(!confirm('이 미션을 삭제할까요?'))return;
+  S.missions[catId].splice(idx,1);
+  Object.keys(S.checks).filter(k=>k.startsWith(catId+'-'+idx+'-')).forEach(k=>delete S.checks[k]);
+  save();renderMissions();
+}
+
+document.getElementById('modalInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter')saveModal();
+  if(e.key==='Escape')closeModal();
+});
+
+/* Calendar */
+function getDateStr(y,m,d){return y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0')}
+function getDayInRange(dateStr){
+  if(!S.startDate)return -1;
+  const s=new Date(S.startDate),t=new Date(dateStr);
+  s.setHours(0,0,0,0);t.setHours(0,0,0,0);
+  const diff=Math.floor((t-s)/86400000)+1;
+  return(diff>=1&&diff<=50)?diff:-1;
+}
+
+function renderCalendar(){
+  const months=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  document.getElementById('calTitle').textContent=calYear+'년 '+months[calMonth];
+  const labels=document.getElementById('calDayLabels');
+  labels.innerHTML=['일','월','화','수','목','금','토'].map(d=>`<div class="cal-day-label">${d}</div>`).join('');
+  const grid=document.getElementById('calGrid');
+  grid.innerHTML='';
+  const today=new Date();today.setHours(0,0,0,0);
+  const firstDay=new Date(calYear,calMonth,1).getDay();
+  const dim=new Date(calYear,calMonth+1,0).getDate();
+  for(let i=0;i<firstDay;i++){const c=document.createElement('div');c.className='cal-cell out';grid.appendChild(c);}
+  for(let d=1;d<=dim;d++){
+    const dateStr=getDateStr(calYear,calMonth,d);
+    const dayNum=getDayInRange(dateStr);
+    const cell=document.createElement('div');
+    const thisDate=new Date(calYear,calMonth,d);
+    const isToday=thisDate.getTime()===today.getTime();
+    let cls='cal-cell';
+    if(dayNum<0){cls+=' not-in-range';}
+    else{
+      const all=CATS.flatMap(c=>(S.missions[c.id]||[]).map((_,i)=>c.id+'-'+i+'-'+dateStr));
+      const done=all.filter(k=>S.checks[k]);
+      if(all.length>0&&done.length===all.length)cls+=' all-done';
+      else if(done.length>0)cls+=' in-range partial';
+      else cls+=' in-range';
+    }
+    if(isToday)cls+=' today';
+    if(selectedDay===dateStr)cls+=' selected';
+    cell.className=cls;cell.textContent=d;
+    if(dayNum>=0)cell.onclick=()=>selectDay(dateStr,dayNum);
+    grid.appendChild(cell);
+  }
+  if(selectedDay)renderDayPanel(selectedDay);
+  else document.getElementById('dayPanel').innerHTML='';
+}
+
+function changeMonth(dir){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
+
+function selectDay(dateStr,dayNum){
+  selectedDay=dateStr;renderCalendar();
+}
+
+function renderDayPanel(dateStr){
+  const dayNum=getDayInRange(dateStr);
+  const panel=document.getElementById('dayPanel');
+  const all=CATS.flatMap(c=>(S.missions[c.id]||[]).map((m,i)=>({cat:c,name:m,idx:i,key:c.id+'-'+i+'-'+dateStr})));
+  if(all.length===0){
+    panel.innerHTML=`<div class="day-panel"><div class="day-panel-head"><div class="day-panel-title">${dateStr.replace(/-/g,'.')} · ${dayNum}일차</div><div class="day-panel-sub">미션 탭에서 미션을 먼저 추가해 주세요</div></div></div>`;
+    return;
+  }
+  const done=all.filter(m=>S.checks[m.key]).length;
+  let html=`<div class="day-panel"><div class="day-panel-head"><div class="day-panel-title">${dateStr.replace(/-/g,'.')} · ${dayNum}일차</div><div class="day-panel-sub">${done} / ${all.length} 완료</div></div>`;
+  all.forEach(m=>{
+    const checked=S.checks[m.key];
+    html+=`<div class="check-item">
+      <div class="check-box${checked?' done':''}" onclick="toggleCheck('${m.key}','${dateStr}')"></div>
+      <span class="check-name" style="${checked?'text-decoration:line-through;color:var(--text3)':''}"> ${esc(m.name)}</span>
+      <span class="check-cat-badge" style="background:${m.cat.bg};color:${m.cat.textColor}">${m.cat.name}</span>
+    </div>`;
+  });
+  html+='</div>';
+  panel.innerHTML=html;
+}
+
+function toggleCheck(key,dateStr){
+  S.checks[key]=!S.checks[key];
+  save();renderCalendar();
+  if(dateStr)renderDayPanel(dateStr);
+}
+
+function onStartDateChange(){
+  S.startDate=document.getElementById('startDateInput').value;
+  save();updateProgress();updateSettings();
+  if(document.getElementById('page-calendar').classList.contains('active'))renderCalendar();
+}
+
+function updateSettings(){
+  let end='—',curDay='—';
+  const d=getDayNum();
+  const total=CATS.reduce((a,c)=>(a+(S.missions[c.id]||[]).length),0);
+  if(S.startDate){
+    const s=new Date(S.startDate),e=new Date(s);e.setDate(e.getDate()+49);
+    end=e.getFullYear()+'. '+(e.getMonth()+1)+'. '+e.getDate()+'.';
+    curDay=d===0?'시작 전':d>50?'완료!':d+'일차';
+  }
+  document.getElementById('endDateLabel').textContent=end;
+  document.getElementById('sloganPreview').textContent=S.slogan||'미설정';
+  document.getElementById('statDay').innerHTML=curDay==='시작 전'||curDay==='완료!'?`<span style="font-size:16px">${curDay}</span>`:d+'<span class="stat-unit">일차</span>';
+  document.getElementById('statPct').innerHTML=Math.round(d/50*100)+'<span class="stat-unit">%</span>';
+  document.getElementById('statTotal').innerHTML=total+'<span class="stat-unit">개</span>';
+  document.getElementById('statLeft').innerHTML=Math.max(50-d,0)+'<span class="stat-unit">일</span>';
+}
+updateSettings();
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
